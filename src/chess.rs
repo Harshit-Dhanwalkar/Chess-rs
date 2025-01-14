@@ -23,15 +23,34 @@ struct Piece {
     color: Color,
 }
 
+// impl Piece {
+//     fn to_char(&self) -> char {
+//         match self.piece_type {
+//             PieceType::Pawn => if self.color == Color::White { 'P' } else { 'p' },
+//             PieceType::Knight => if self.color == Color::White { 'N' } else { 'n' },
+//             PieceType::Bishop => if self.color == Color::White { 'B' } else { 'b' },
+//             PieceType::Rook => if self.color == Color::White { 'R' } else { 'r' },
+//             PieceType::Queen => if self.color == Color::White { 'Q' } else { 'q' },
+//             PieceType::King => if self.color == Color::White { 'K' } else { 'k' },
+//         }
+//     }
+// }
+
 impl Piece {
-    fn to_char(&self) -> char {
-        match self.piece_type {
-            PieceType::Pawn => if self.color == Color::White { 'P' } else { 'p' },
-            PieceType::Knight => if self.color == Color::White { 'N' } else { 'n' },
-            PieceType::Bishop => if self.color == Color::White { 'B' } else { 'b' },
-            PieceType::Rook => if self.color == Color::White { 'R' } else { 'r' },
-            PieceType::Queen => if self.color == Color::White { 'Q' } else { 'q' },
-            PieceType::King => if self.color == Color::White { 'K' } else { 'k' },
+    fn to_char(&self) -> String {
+        let symbol = match self.piece_type {
+            PieceType::Pawn => if self.color == Color::White { '♙' } else { '♟' },
+            PieceType::Knight => if self.color == Color::White { '♘' } else { '♞' },
+            PieceType::Bishop => if self.color == Color::White { '♗' } else { '♝' },
+            PieceType::Rook => if self.color == Color::White { '♖' } else { '♜' },
+            PieceType::Queen => if self.color == Color::White { '♕' } else { '♛' },
+            PieceType::King => if self.color == Color::White { '♔' } else { '♚' },
+        };
+
+        if self.color == Color::White {
+            format!("\x1b[1m{}\x1b[0m", symbol) // Bold for white
+        } else {
+            format!("\x1b[34m{}\x1b[0m", symbol) // Blue for black
         }
     }
 }
@@ -59,17 +78,26 @@ impl Board {
         Board { squares }
     }
 
-    fn print_board(&self) {
-        println!("12345678");
-        for row in self.squares.iter() {
-            for square in row.iter() {
-                match square {
-                      Some(piece) => print!("{}", piece.to_char()),
-                      None => print!("."),
+    fn print_board(&self, highlights: &[(usize, usize)]) {
+    //fn print_board(&self) {
+        println!("   a b c d e f g h");
+        println!("  ┌────────────────┐");
+        for (i,row) in self.squares.iter().enumerate() {
+            print!("{} │", 8 - i);
+            for (j,square) in row.iter().enumerate() {
+                if highlights.contains(&(i, j)) {
+                    print!("* "); // Highlighted move
+                } else {
+                    match square {
+                          Some(piece) => print!("{} ", piece.to_char()),
+                          None => print!(". "),
+                    }
                 }
             }
-            println!();
+            println!("│");
         }
+        println!("  └────────────────┘");
+        println!("   a b c d e f g h");
     }
 
     // general move validation for all pieces
@@ -493,9 +521,15 @@ impl Board {
     }
 }
 
+// fn clear_screen() {
+//     print!("\x1b[2J\x1b[H");
+// }
+
 fn main() {
     let mut board = Board::new();
-    board.print_board();
+    let highlights = vec![];
+    // let highlights = vec![(0, 0), (1, 1), (2, 2)];
+    board.print_board(&highlights);
 
     let white_moves = board.get_all_moves(Color::White);
     let black_moves = board.get_all_moves(Color::Black);
@@ -512,7 +546,8 @@ fn main() {
     println!("Is the game over for Black? {}", board.is_game_over(Color::Black));
 
     while !board.is_game_over(current_player) {
-        board.print_board();
+        board.print_board(&highlights);
+        // board.print_board(&[(0, 0), (1, 1)]);
 
         // prompt for user input
         //println!("enter your move (e.g., e2e4):");
