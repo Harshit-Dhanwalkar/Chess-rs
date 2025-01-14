@@ -23,19 +23,6 @@ struct Piece {
     color: Color,
 }
 
-// impl Piece {
-//     fn to_char(&self) -> char {
-//         match self.piece_type {
-//             PieceType::Pawn => if self.color == Color::White { 'P' } else { 'p' },
-//             PieceType::Knight => if self.color == Color::White { 'N' } else { 'n' },
-//             PieceType::Bishop => if self.color == Color::White { 'B' } else { 'b' },
-//             PieceType::Rook => if self.color == Color::White { 'R' } else { 'r' },
-//             PieceType::Queen => if self.color == Color::White { 'Q' } else { 'q' },
-//             PieceType::King => if self.color == Color::White { 'K' } else { 'k' },
-//         }
-//     }
-// }
-
 impl Piece {
     fn to_char(&self) -> String {
         let symbol = match self.piece_type {
@@ -83,7 +70,8 @@ impl Board {
         println!("   a b c d e f g h");
         println!("  ┌────────────────┐");
         for (i,row) in self.squares.iter().enumerate() {
-            print!("{} │", 8 - i);
+            //print!("{} │", 8 - i);
+            print!("{} │", (b'8' - i as u8) as char);
             for (j,square) in row.iter().enumerate() {
                 if highlights.contains(&(i, j)) {
                     print!("* "); // Highlighted move
@@ -504,20 +492,38 @@ impl Board {
     //         None
     //     }
     // }
-    fn parse_move(move_str: &str) -> Option<(usize, usize)> {
+    // fn parse_move(move_str: &str) -> Option<(usize, usize)> {
+    //     if move_str.len() != 2 {
+    //         return None;
+    //     }
+    //
+    //     // Parse position
+    //     let x = move_str.chars().nth(0)? as usize - 'a' as usize; // 'a' -> 0, 'b' -> 1, etc.
+    //     let y = move_str.chars().nth(1)? as usize - '1' as usize; // '1' -> 0, '2' -> 1, etc.
+    //
+    //     if x < 8 && y < 8 {
+    //         Some((x, y))
+    //     } else {
+    //         None
+    //     }
+    // }
+    fn parse_move(&self, move_str: &str) -> Option<(usize, usize)> {
         if move_str.len() != 2 {
-            return None;
+            return None; // Input must be exactly two characters
         }
 
-        // Parse position
-        let x = move_str.chars().nth(0)? as usize - 'a' as usize; // 'a' -> 0, 'b' -> 1, etc.
-        let y = move_str.chars().nth(1)? as usize - '1' as usize; // '1' -> 0, '2' -> 1, etc.
+        let chars: Vec<char> = move_str.chars().collect();
+        let col = chars[0].to_ascii_lowercase(); // Column letter (a-h)
+        let row = chars[1]; // Row number (1-8)
 
-        if x < 8 && y < 8 {
-            Some((x, y))
-        } else {
-            None
+        if !('a'..='h').contains(&col) || !('1'..='8').contains(&row) {
+            return None; // Invalid input
         }
+
+        let col_index = (col as usize) - ('a' as usize); // Convert column to index (a=0, b=1, ...)
+        let row_index = 8 - (row.to_digit(10)? as usize); // Convert row to index (8=0, 7=1, ...)
+
+        Some((row_index, col_index))
     }
 }
 
@@ -527,17 +533,14 @@ impl Board {
 
 fn main() {
     let mut board = Board::new();
-    let highlights = vec![];
-    // let highlights = vec![(0, 0), (1, 1), (2, 2)];
-    board.print_board(&highlights);
 
-    let white_moves = board.get_all_moves(Color::White);
-    let black_moves = board.get_all_moves(Color::Black);
+    // let white_moves = board.get_all_moves(Color::White);
+    // let black_moves = board.get_all_moves(Color::Black);
 
     let mut current_player = Color::White; // White starts the game
 
-    println!("White has {} valid moves.", white_moves.len());
-    println!("Black has {} valid moves.", black_moves.len());
+    println!("White has {} valid moves.", board.get_all_moves(Color::White).len());
+    println!("Black has {} valid moves.", board.get_all_moves(Color::Black).len());
 
     println!("Is White in check? {}", board.is_in_check(Color::White));
     println!("Is Black in check? {}", board.is_in_check(Color::Black));
@@ -546,10 +549,9 @@ fn main() {
     println!("Is the game over for Black? {}", board.is_game_over(Color::Black));
 
     while !board.is_game_over(current_player) {
+        let highlights = vec![];
         board.print_board(&highlights);
-        // board.print_board(&[(0, 0), (1, 1)]);
 
-        // prompt for user input
         //println!("enter your move (e.g., e2e4):");
         println!("player {:?}'s turn", current_player);
         let mut input = String::new();
@@ -560,24 +562,15 @@ fn main() {
         }
 
         // Parse start and end positions
-        let start = Board::parse_move(&input[0..2]);
-        let end = Board::parse_move(&input[2..4]);
+        let start = board.parse_move(&input[0..2]);
+        let end = board.parse_move(&input[2..4]);
 
-        // if let (Some((start_x, start_y, _, _)), Some((end_x, end_y, _, _))) = (start, end) {
-        //     if board.is_valid_move((start_x, start_y), (end_x, end_y), current_player) {
-        //         board.move_piece((start_x, start_y), (end_x, end_y));
-        //         current_player = match current_player {
-        //             Color::White => Color::Black,
-        //             Color::Black => Color::White,
-        //         };
-        //     } else {
-        //         println!("invalid move, try again.");
-        //     }
-        //    println!("Game over! Player {:?} has no valid moves.", current_player);
-        //    }
         if let (Some((start_x, start_y)), Some((end_x, end_y))) = (start, end) {
             println!("Parsed start: ({}, {}), end: ({}, {})", start_x, start_y, end_x, end_y);
+
+            // Check if the move is valid
             if board.is_valid_move((start_x, start_y), (end_x, end_y), current_player) {
+                // Make the move and switch players
                 board.move_piece((start_x, start_y), (end_x, end_y));
                 current_player = match current_player {
                     Color::White => Color::Black,
@@ -587,7 +580,11 @@ fn main() {
                 println!("invalid move, try again.");
             }
         } else {
-            println!("Game over! Player {:?} has no valid moves.", current_player);
+            println!("Invalid move format or out-of-bound coordinates.");
           }
     }
+    //
+    // Game Over
+    board.print_board(&vec![]);
+    println!("Game over! Player {:?} has no valid moves.", current_player);
 }
