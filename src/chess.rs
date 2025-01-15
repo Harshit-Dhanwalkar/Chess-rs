@@ -47,13 +47,11 @@ impl Piece {
 impl Board {
     fn new() -> Board {
         let mut squares = [[None; 8]; 8]; // Initialize empty squares with None
-
         // Initialize pawns
         for i in 0..8 {
             squares[1][i] = Some(Piece { piece_type: PieceType::Pawn, color: Color::White });
             squares[6][i] = Some(Piece { piece_type: PieceType::Pawn, color: Color::Black });
         }
-
         // Initialize other pieces
         let back_rank = [
             PieceType::Rook, PieceType::Knight, PieceType::Bishop, PieceType::Queen,
@@ -63,7 +61,6 @@ impl Board {
             squares[0][i] = Some(Piece { piece_type, color: Color::White });
             squares[7][i] = Some(Piece { piece_type, color: Color::Black });
         }
-
         // Initialize the board with an empty captured pieces array
         Board {
             squares,
@@ -101,19 +98,16 @@ impl Board {
         //      "Checking move validity for color {:?}: ({}, {}) -> ({}, {})",
         //      color, start.0, start.1, end.0, end.1
         // );
-
         let (start_x, start_y) = start;
         let (end_x, end_y) = end;
 
         if start == end || end_x >= 8 || end_y >= 8 {
             return false; // a move to the same position is not allowed
         }
-
         if let Some(piece) = &self.squares[start_x][start_y] {
             if piece.color != color {
                 return false; // cannot move an opponent's piece
             }
-
             match piece.piece_type {
                 PieceType::Pawn => self.is_valid_pawn_move(start, end, color),
                 PieceType::Knight => self.is_valid_knight_move(start, end, color),
@@ -128,25 +122,9 @@ impl Board {
     }
 
     // Move a piece from the start to the end position
-    // /// Returns `true` if the move captures a king
-    // fn move_piece(&mut self, start: (usize, usize), end: (usize, usize)) -> bool {
-    //     if let Some(piece) = self.squares[start.0][start.1].take() {
-    //         // Check if the destination square contains a king
-    //         if let Some(target_piece) = &self.squares[end.0][end.1] {
-    //             if target_piece.piece_type == PieceType::King {
-    //                 // King is captured, return true
-    //                 self.squares[end.0][end.1] = Some(piece);
-    //                 return true;
-    //             }
-    //         }
-    //         // Perform the move
-    //         self.squares[end.0][end.1] = Some(piece);
-    //     }
-    //     false
-    // }
     fn move_piece(&mut self, start: (usize, usize), end: (usize, usize)) {
         if let Some(captured) = self.squares[end.0][end.1].take() {
-            // Add captured piece to the respective list
+            // Add captured piece to the list
             if captured.color == Color::White {
                 self.captured_white.push(captured);
             } else {
@@ -238,7 +216,6 @@ impl Board {
                 }
             }
         }
-
         false
     }
 
@@ -254,7 +231,6 @@ impl Board {
             return self.squares[end_x][end_y].is_none() 
                 || self.squares[end_x][end_y].unwrap().color != color; // capture an opponent's piece
         }
-
         false
     }
 
@@ -357,6 +333,87 @@ impl Board {
         None
     }
 
+    // check if a king is in check (attacked by an opposing piece)
+    fn is_in_check(&self, color: Color) -> bool {
+        let king_pos = match self.find_king(color) {
+            Some(pos) => pos,
+            None => return false, // If the king is not found, can't be in check
+        };
+        let opposing_color = if color == Color::White { Color::Black } else { Color::White };
+        for x in 0..8 {
+            for y in 0..8 {
+                if let Some(piece) = &self.squares[x][y] {
+                    if piece.color == opposing_color {
+                        if self.is_valid_move((x, y), king_pos, opposing_color) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    fn is_checkmate(&self, color: Color) -> bool {
+        // If the king is not in check, it cannot be in checkmate
+        if !self.is_in_check(color) {
+            return false;
+        }
+        // Loop through all the player's pieces to check if any can move to escape check
+        for x in 0..8 {
+            for y in 0..8 {
+                if let Some(piece) = &self.squares[x][y] {
+                    if piece.color == color {
+                        // Try moving each piece to every valid square
+                        for new_x in 0..8 {
+                            for new_y in 0..8 {
+                                if self.is_valid_move((x, y), (new_x, new_y), color) {
+                                    // Simulate the move and check if the king will still be in check
+                                    let mut board_copy = self.clone();
+                                    board_copy.move_piece((x, y), (new_x, new_y));
+                                    if !board_copy.is_in_check(color) {
+                                        return false; // If there is a move that avoids check, it's not checkmate
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        true // No moves to avoid check, it's checkmate
+    }
+
+    fn is_in_check_after_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
+        let mut board_copy = self.clone();
+        board_copy.move_piece(start, end);
+        board_copy.is_in_check(color)
+    }
+
+    fn is_stalemate(&self, color: Color) -> bool {
+        if self.is_in_check(color) {
+            return false; // Can't be stalemate if the king is in check
+        }
+        // Check if there are any legal moves for the player
+        for x in 0..8 {
+            for y in 0..8 {
+                if let Some(piece) = &self.squares[x][y] {
+                    if piece.color == color {
+                        // Try moving each piece to any valid square
+                        for new_x in 0..8 {
+                            for new_y in 0..8 {
+                                if self.is_valid_move((x, y), (new_x, new_y), color) {
+                                    return false; // There is a move left for the player
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        true // No moves left, it's stalemate
+    }
+
     // Check if a given color's king is still on the board
     fn has_king(&self, color: Color) -> bool {
         for row in &self.squares {
@@ -410,26 +467,6 @@ impl Board {
             self.squares[end_x][end_y] = self.squares[start_x][start_y].take();
             self.squares[start_x][start_y] = None; // clear the starting position
         }
-    }
-
-    // check if a king is in check (attacked by an opposing piece)
-    fn is_in_check(&self, color: Color) -> bool {
-        let king_pos = self.find_king(color);
-        if let Some((king_x, king_y)) = king_pos {
-            let opposing_color = if color == Color::White { Color::Black } else { Color::White };
-            for x in 0..8 {
-                for y in 0..8 {
-                    if let Some(piece) = &self.squares[x][y] {
-                        if piece.color == opposing_color {
-                            if self.is_valid_move((x, y), (king_x, king_y), opposing_color) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        false
     }
 
     // check if a player has valid moves
@@ -556,7 +593,6 @@ fn main() {
 
         if let (Some((start_x, start_y)), Some((end_x, end_y))) = (start, end) {
             println!("Parsed start: ({}, {}), end: ({}, {})", start_x, start_y, end_x, end_y);
-
             // Check if the move is valid
             if board.is_valid_move((start_x, start_y), (end_x, end_y), current_player) {
                 // Make the move and switch players
