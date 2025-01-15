@@ -48,9 +48,9 @@ impl Piece {
             PieceType::Pawn => if self.color == Color::White { '♙' } else { '♟' },
         };
         if self.color == Color::White {
-            format!("\x1b[1m{}\x1b[0m", symbol)
+            format!("\x1b[1;97m{}\x1b[0m", symbol) // White pieces in bold
         } else {
-            format!("\x1b[34m{}\x1b[0m", symbol)
+            format!("\x1b[1;34m{}\x1b[0m", symbol) // Black pieces in blue
         }
     }
     fn points(&self) -> u32 {
@@ -169,10 +169,13 @@ impl Board {
         // Convert captured pieces to a string representation of their characters
         let white_captured: String = self.captured_white.iter().map(|p| p.to_char()).collect();
         let black_captured: String = self.captured_black.iter().map(|p| p.to_char()).collect();
-        // Print the captured pieces and their respective points
-        println!("Captured pieces");
-        println!("White: {} ({} points)", white_captured, self.white_points);
-        println!("Black: {} ({} points)", black_captured, self.black_points);
+
+        println!("┌──────────────────────────┬─────────────────────────────┐");
+        println!("│ {:<10}               │ {:<13}               │", "Points ", "Captured pieces");
+        println!("├──────────────────────────┼─────────────────────────────┤");
+        println!("│ {:<10}               │ White: {:<13}        │", self.white_points, white_captured);
+        println!("│ {:<10}               │ Black: {:<13}        │", self.black_points, black_captured);
+        println!("└──────────────────────────┴─────────────────────────────┘");
     }
 
     // check if the game is over (checkmate or stalemate)
