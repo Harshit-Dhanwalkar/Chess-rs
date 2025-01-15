@@ -10,6 +10,9 @@ struct Board {
     captured_black: Vec<Piece>,
     // to get current turn
     current_turn: Color,
+    // for point counter/tracker
+    white_points: u32,
+    black_points: u32,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -24,7 +27,8 @@ enum PieceType {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Color {
-    White, Black,
+    White, 
+    Black,
 }
 
 #[derive(Clone, Copy)]
@@ -49,9 +53,19 @@ impl Piece {
             format!("\x1b[34m{}\x1b[0m", symbol)
         }
     }
+    fn points(&self) -> u32 {
+        match self.piece_type {
+            PieceType::Pawn => 1,
+            PieceType::Knight | PieceType::Bishop => 3,
+            PieceType::Rook => 5,
+            PieceType::Queen => 9,
+            PieceType::King => 0, // King has no point value for captures
+        }
+    }
 }
 
 impl Board {
+    // Constructor for Board
     fn new() -> Board {
         let mut squares = [[None; 8]; 8]; // Initialize empty squares with None
         // Initialize pawns
@@ -75,6 +89,9 @@ impl Board {
             captured_black: Vec::new(),
 
             current_turn: Color::White, // White starts the game
+
+            white_points: 0,
+            black_points: 0,
         }
     }
 
@@ -135,14 +152,27 @@ impl Board {
         if let Some(captured) = self.squares[end.0][end.1].take() {
             // Add captured piece to the list
             if captured.color == Color::White {
-                self.captured_white.push(captured);
+                self.captured_white.push(captured); // Add white piece to the captured list
+                self.white_points += captured.points(); // Add points for White
             } else {
-                self.captured_black.push(captured);
+                self.captured_black.push(captured); // Add black piece to the captured list
+                self.black_points += captured.points(); // Add points for Black
             }
         }
+        // Move the piece from start to end
         if let Some(piece) = self.squares[start.0][start.1].take() {
             self.squares[end.0][end.1] = Some(piece);
         }
+    }
+
+    fn print_captured_pieces(&self) {
+        // Convert captured pieces to a string representation of their characters
+        let white_captured: String = self.captured_white.iter().map(|p| p.to_char()).collect();
+        let black_captured: String = self.captured_black.iter().map(|p| p.to_char()).collect();
+        // Print the captured pieces and their respective points
+        println!("Captured pieces");
+        println!("White: {} ({} points)", white_captured, self.white_points);
+        println!("Black: {} ({} points)", black_captured, self.black_points);
     }
 
     // check if the game is over (checkmate or stalemate)
@@ -166,14 +196,6 @@ impl Board {
             }
         }
         moves
-    }
-
-    fn print_captured_pieces(&self) {
-        let white_captured: String = self.captured_white.iter().map(|p| p.to_char()).collect();
-        let black_captured: String = self.captured_black.iter().map(|p| p.to_char()).collect();
-        println!("Captured pieces:");
-        println!("White: {}", white_captured);
-        println!("Black: {}", black_captured);
     }
 
     fn is_valid_pawn_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
@@ -455,19 +477,6 @@ impl Board {
         false
     }
 
-    // // make a move on the board
-    // fn make_move(&mut self, mv: ((usize, usize), (usize, usize))) {
-    //     let (start, end) = mv;
-    //     let (start_x, start_y) = start;
-    //     let (end_x, end_y) = end;
-    //
-    //     if let Some(_piece) = self.squares[start_x][start_y].take() {
-    //         // perform the move
-    //         self.squares[end_x][end_y] = self.squares[start_x][start_y].take();
-    //         self.squares[start_x][start_y] = None; // clear the starting position
-    //     }
-    // }
-
     // // check if a player has valid moves
     // fn has_valid_moves(&self, color: Color) -> bool {
     //     for x in 0..8 {
@@ -560,7 +569,7 @@ impl Board {
     //         let moves = Board.get_all_moves(Color::White); // white's turn
     //         for mv in moves {
     //             let mut Board_copy = Board.clone();
-    //             Board_copy.make_move(mv);
+    //             Board_copy.move_piece(mv);
     //             let eval = Board::minimax(&Board_copy, depth - 1, false); // Recursively call minimax
     //             max_eval = std::cmp::max(max_eval, eval); // Update max_eval with the maximum value
     //         }
@@ -570,7 +579,7 @@ impl Board {
     //         let moves = Board.get_all_moves(Color::Black); // black's turn
     //         for mv in moves {
     //             let mut Board_copy = Board.clone();
-    //             Board_copy.make_move(mv);
+    //             Board_copy.move_piece(mv);
     //             let eval = Board::minimax(&Board_copy, depth - 1, true);// Recursively call minimax
     //             min_eval = std::cmp::min(min_eval, eval); // Update min_eval with the minimum value
     //         }
