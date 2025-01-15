@@ -15,6 +15,7 @@
 - [ ] Undo/Redo moves
 
 ***AI*** 
+- [ ] implement minimax 
 - [ ] alpha-beta pruning
 - [ ] transposition table
 - [ ] evaluation function
