@@ -5,6 +5,9 @@ use std::vec::Vec;
 #[derive(Clone)]
 struct Board {
     squares: [[Option<Piece>; 8]; 8],
+    // To store captured pieces
+    captured_white: Vec<Piece>,
+    captured_black: Vec<Piece>,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -33,11 +36,10 @@ impl Piece {
             PieceType::Queen => if self.color == Color::White { '♕' } else { '♛' },
             PieceType::King => if self.color == Color::White { '♔' } else { '♚' },
         };
-
         if self.color == Color::White {
-            format!("\x1b[1m{}\x1b[0m", symbol) // Bold for white
+            format!("\x1b[1m{}\x1b[0m", symbol)
         } else {
-            format!("\x1b[34m{}\x1b[0m", symbol) // Blue for black
+            format!("\x1b[34m{}\x1b[0m", symbol)
         }
     }
 }
@@ -62,7 +64,12 @@ impl Board {
             squares[7][i] = Some(Piece { piece_type, color: Color::Black });
         }
 
-        Board { squares }
+        // Initialize the board with an empty captured pieces array
+        Board {
+            squares,
+            captured_white: Vec::new(),
+            captured_black: Vec::new(),
+        }
     }
 
     fn print_board(&self, highlights: &[(usize, usize)]) {
@@ -120,7 +127,32 @@ impl Board {
         }
     }
 
+    // Move a piece from the start to the end position
+    // /// Returns `true` if the move captures a king
+    // fn move_piece(&mut self, start: (usize, usize), end: (usize, usize)) -> bool {
+    //     if let Some(piece) = self.squares[start.0][start.1].take() {
+    //         // Check if the destination square contains a king
+    //         if let Some(target_piece) = &self.squares[end.0][end.1] {
+    //             if target_piece.piece_type == PieceType::King {
+    //                 // King is captured, return true
+    //                 self.squares[end.0][end.1] = Some(piece);
+    //                 return true;
+    //             }
+    //         }
+    //         // Perform the move
+    //         self.squares[end.0][end.1] = Some(piece);
+    //     }
+    //     false
+    // }
     fn move_piece(&mut self, start: (usize, usize), end: (usize, usize)) {
+        if let Some(captured) = self.squares[end.0][end.1].take() {
+            // Add captured piece to the respective list
+            if captured.color == Color::White {
+                self.captured_white.push(captured);
+            } else {
+                self.captured_black.push(captured);
+            }
+        }
         if let Some(piece) = self.squares[start.0][start.1].take() {
             self.squares[end.0][end.1] = Some(piece);
         }
@@ -151,6 +183,14 @@ impl Board {
 
     fn is_game_over(&self, color: Color) -> bool {
             self.get_all_moves(color).is_empty()
+    }
+
+    fn print_captured_pieces(&self) {
+        let white_captured: String = self.captured_white.iter().map(|p| p.to_char()).collect();
+        let black_captured: String = self.captured_black.iter().map(|p| p.to_char()).collect();
+        println!("Captured pieces:");
+        println!("White: {}", white_captured);
+        println!("Black: {}", black_captured);
     }
 
     fn is_valid_pawn_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
@@ -246,37 +286,6 @@ impl Board {
         self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
     }
 
-    // fn is_valid_rook_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
-    //     let (start_x, start_y) = start;
-    //     let (end_x, end_y) = end;
-    //
-    //     // rook moves along rows or columns
-    //     if start_x != end_x && start_y != end_y {
-    //         return false; // rook can't move diagonally
-    //     }
-    //
-    //     // check for clear path (no pieces between start and end)
-    //     if start_x == end_x {
-    //         let min_y = start_y.min(end_y);
-    //         let max_y = start_y.max(end_y);
-    //         for y in (min_y + 1)..max_y {
-    //             if self.squares[start_x][y].is_some() {
-    //                 return false; // a piece is blocking the path
-    //             }
-    //         }
-    //     } else {
-    //         let min_x = start_x.min(end_x);
-    //         let max_x = start_x.max(end_x);
-    //         for x in (min_x + 1)..max_x {
-    //             if self.squares[x][start_y].is_some() {
-    //                 return false; // a piece is blocking the path
-    //             }
-    //         }
-    //     }
-    //
-    //     // Destination square must be empty or have an opponent's piece
-    //     self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
-    // }
     fn is_valid_rook_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
         let (start_x, start_y) = start;
         let (end_x, end_y) = end;
@@ -346,6 +355,20 @@ impl Board {
             }
         }
         None
+    }
+
+    // Check if a given color's king is still on the board
+    fn has_king(&self, color: Color) -> bool {
+        for row in &self.squares {
+            for square in row {
+                if let Some(piece) = square {
+                    if piece.piece_type == PieceType::King && piece.color == color {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 
     // evaluate the board (material balance)
@@ -551,6 +574,7 @@ fn main() {
     while !board.is_game_over(current_player) {
         let highlights = vec![];
         board.print_board(&highlights);
+        board.print_captured_pieces();
 
         //println!("enter your move (e.g., e2e4):");
         println!("player {:?}'s turn", current_player);
@@ -583,8 +607,16 @@ fn main() {
             println!("Invalid move format or out-of-bound coordinates.");
           }
     }
-    //
+
     // Game Over
-    board.print_board(&vec![]);
-    println!("Game over! Player {:?} has no valid moves.", current_player);
+    if !board.has_king(Color::White) {
+        board.print_board(&vec![]);
+        println!("Game over! Black wins. White's king has been captured.");
+        return;
+    }
+    if !board.has_king(Color::Black) {
+        board.print_board(&vec![]);
+        println!("Game over! White wins. Black's king has been captured.");
+        return;
+    }
 }
