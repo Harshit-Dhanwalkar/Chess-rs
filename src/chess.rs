@@ -412,35 +412,6 @@ impl Board {
         }
     }
 
-    // minimax function for decision-making (basic ai)
-    fn minimax(Board: &Board, depth: usize, is_maximizing: bool) -> i32 {
-        if depth == 0 || Board.is_game_over(Color::White) || Board.is_game_over(Color::Black) {
-            return Board.evaluate();
-        }
-
-        if is_maximizing {
-            let mut max_eval = i32::MIN;  // Initialize to the smallest possible value
-            let moves = Board.get_all_moves(Color::White); // white's turn
-            for mv in moves {
-                let mut Board_copy = Board.clone();
-                Board_copy.make_move(mv);
-                let eval = Board::minimax(&Board_copy, depth - 1, false); // Recursively call minimax
-                max_eval = std::cmp::max(max_eval, eval); // Update max_eval with the maximum value
-            }
-            max_eval // Return the best evaluation for maximizing player
-        } else {
-            let mut min_eval = i32::MAX; // Initialize to the largest possible value
-            let moves = Board.get_all_moves(Color::Black); // black's turn
-            for mv in moves {
-                let mut Board_copy = Board.clone();
-                Board_copy.make_move(mv);
-                let eval = Board::minimax(&Board_copy, depth - 1, true);// Recursively call minimax
-                min_eval = std::cmp::min(min_eval, eval); // Update min_eval with the minimum value
-            }
-            min_eval
-        }
-    }
-
     // check if a king is in check (attacked by an opposing piece)
     fn is_in_check(&self, color: Color) -> bool {
         let king_pos = self.find_king(color);
@@ -493,43 +464,6 @@ impl Board {
         }
     }
 
-    // fn parse_move(move_str: &str) -> Option<(usize, usize, usize, usize)> {
-    //     if move_str.len() != 4 {
-    //         return None;
-    //     }
-    //
-    //     let start_chars: Vec<char> = move_str[0..2].chars().collect();
-    //     let end_chars: Vec<char> = move_str[2..4].chars().collect();
-    //
-    //     // Parse start position
-    //     let start_x = start_chars[0] as usize - 'a' as usize; // 'a' -> 0, 'b' -> 1, etc.
-    //     let start_y = start_chars[1] as usize - '1' as usize; // '1' -> 0, '2' -> 1, etc.
-    //
-    //     // Parse end position
-    //     let end_x = end_chars[0] as usize - 'a' as usize;
-    //     let end_y = end_chars[1] as usize - '1' as usize;
-    //
-    //     if start_x < 8 && start_y < 8 && end_x < 8 && end_y < 8 {
-    //         Some((start_x, start_y, end_x, end_y))
-    //     } else {
-    //         None
-    //     }
-    // }
-    // fn parse_move(move_str: &str) -> Option<(usize, usize)> {
-    //     if move_str.len() != 2 {
-    //         return None;
-    //     }
-    //
-    //     // Parse position
-    //     let x = move_str.chars().nth(0)? as usize - 'a' as usize; // 'a' -> 0, 'b' -> 1, etc.
-    //     let y = move_str.chars().nth(1)? as usize - '1' as usize; // '1' -> 0, '2' -> 1, etc.
-    //
-    //     if x < 8 && y < 8 {
-    //         Some((x, y))
-    //     } else {
-    //         None
-    //     }
-    // }
     fn parse_move(&self, move_str: &str) -> Option<(usize, usize)> {
         if move_str.len() != 2 {
             return None; // Input must be exactly two characters
@@ -548,6 +482,37 @@ impl Board {
 
         Some((row_index, col_index))
     }
+
+    // TODO: to implement minimax for automation
+
+    // // minimax function for decision-making (basic ai)
+    // fn minimax(Board: &Board, depth: usize, is_maximizing: bool) -> i32 {
+    //     if depth == 0 || Board.is_game_over(Color::White) || Board.is_game_over(Color::Black) {
+    //         return Board.evaluate();
+    //     }
+    //
+    //     if is_maximizing {
+    //         let mut max_eval = i32::MIN;  // Initialize to the smallest possible value
+    //         let moves = Board.get_all_moves(Color::White); // white's turn
+    //         for mv in moves {
+    //             let mut Board_copy = Board.clone();
+    //             Board_copy.make_move(mv);
+    //             let eval = Board::minimax(&Board_copy, depth - 1, false); // Recursively call minimax
+    //             max_eval = std::cmp::max(max_eval, eval); // Update max_eval with the maximum value
+    //         }
+    //         max_eval // Return the best evaluation for maximizing player
+    //     } else {
+    //         let mut min_eval = i32::MAX; // Initialize to the largest possible value
+    //         let moves = Board.get_all_moves(Color::Black); // black's turn
+    //         for mv in moves {
+    //             let mut Board_copy = Board.clone();
+    //             Board_copy.make_move(mv);
+    //             let eval = Board::minimax(&Board_copy, depth - 1, true);// Recursively call minimax
+    //             min_eval = std::cmp::min(min_eval, eval); // Update min_eval with the minimum value
+    //         }
+    //         min_eval
+    //     }
+    // }
 }
 
 // fn clear_screen() {
