@@ -8,11 +8,18 @@ struct Board {
     // To store captured pieces
     captured_white: Vec<Piece>,
     captured_black: Vec<Piece>,
+    // to get current turn
+    current_turn: Color,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 enum PieceType {
-    Pawn, Knight, Bishop, Rook, Queen, King,
+    King,
+    Queen,
+    Rook,
+    Bishop,
+    Knight,
+    Pawn,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -29,12 +36,12 @@ struct Piece {
 impl Piece {
     fn to_char(&self) -> String {
         let symbol = match self.piece_type {
-            PieceType::Pawn => if self.color == Color::White { '♙' } else { '♟' },
-            PieceType::Knight => if self.color == Color::White { '♘' } else { '♞' },
-            PieceType::Bishop => if self.color == Color::White { '♗' } else { '♝' },
-            PieceType::Rook => if self.color == Color::White { '♖' } else { '♜' },
-            PieceType::Queen => if self.color == Color::White { '♕' } else { '♛' },
             PieceType::King => if self.color == Color::White { '♔' } else { '♚' },
+            PieceType::Queen => if self.color == Color::White { '♕' } else { '♛' },
+            PieceType::Rook => if self.color == Color::White { '♖' } else { '♜' },
+            PieceType::Bishop => if self.color == Color::White { '♗' } else { '♝' },
+            PieceType::Knight => if self.color == Color::White { '♘' } else { '♞' },
+            PieceType::Pawn => if self.color == Color::White { '♙' } else { '♟' },
         };
         if self.color == Color::White {
             format!("\x1b[1m{}\x1b[0m", symbol)
@@ -66,6 +73,8 @@ impl Board {
             squares,
             captured_white: Vec::new(),
             captured_black: Vec::new(),
+
+            current_turn: Color::White, // White starts the game
         }
     }
 
@@ -157,10 +166,6 @@ impl Board {
             }
         }
         moves
-    }
-
-    fn is_game_over(&self, color: Color) -> bool {
-            self.get_all_moves(color).is_empty()
     }
 
     fn print_captured_pieces(&self) {
@@ -335,23 +340,29 @@ impl Board {
 
     // check if a king is in check (attacked by an opposing piece)
     fn is_in_check(&self, color: Color) -> bool {
-        let king_pos = match self.find_king(color) {
+        println!("Checking if the king of {:?} is in check", color);
+        let king_position = match self.find_king(color) {
             Some(pos) => pos,
             None => return false, // If the king is not found, can't be in check
         };
-        let opposing_color = if color == Color::White { Color::Black } else { Color::White };
+
+        // Loop through the opponent's pieces and check if any can attack the king
+        let opponent_color = if color == Color::White { Color::Black } else { Color::White };
         for x in 0..8 {
             for y in 0..8 {
                 if let Some(piece) = &self.squares[x][y] {
-                    if piece.color == opposing_color {
-                        if self.is_valid_move((x, y), king_pos, opposing_color) {
-                            return true;
+                    if piece.color == opponent_color {
+                        // Check if the opponent's piece can attack the king's position
+                        if self.is_valid_move((x, y), king_position, opponent_color) {
+                            // Print when the king is in check
+                            println!("King of {:?} is in check! Attacked by {:?} at ({}, {})", color, piece.piece_type, x, y);
+                            return true; // King is in check
                         }
                     }
                 }
             }
         }
-        false
+        false // King is not in check
     }
 
     fn is_checkmate(&self, color: Color) -> bool {
@@ -381,38 +392,43 @@ impl Board {
                 }
             }
         }
-        true // No moves to avoid check, it's checkmate
+        // No moves to avoid check, it's checkmate
+        true
     }
 
-    fn is_in_check_after_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
-        let mut board_copy = self.clone();
-        board_copy.move_piece(start, end);
-        board_copy.is_in_check(color)
-    }
+    // TODO: implement check_after_move
+    //
+    // fn is_in_check_after_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
+    //     let mut board_copy = self.clone();
+    //     board_copy.move_piece(start, end);
+    //     board_copy.is_in_check(color)
+    // }
 
-    fn is_stalemate(&self, color: Color) -> bool {
-        if self.is_in_check(color) {
-            return false; // Can't be stalemate if the king is in check
-        }
-        // Check if there are any legal moves for the player
-        for x in 0..8 {
-            for y in 0..8 {
-                if let Some(piece) = &self.squares[x][y] {
-                    if piece.color == color {
-                        // Try moving each piece to any valid square
-                        for new_x in 0..8 {
-                            for new_y in 0..8 {
-                                if self.is_valid_move((x, y), (new_x, new_y), color) {
-                                    return false; // There is a move left for the player
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        true // No moves left, it's stalemate
-    }
+    // TODO: implement stalemate
+    //
+    // fn is_stalemate(&self, color: Color) -> bool {
+    //     if self.is_in_check(color) {
+    //         return false; // Can't be stalemate if the king is in check
+    //     }
+    //     // Check if there are any legal moves for the player
+    //     for x in 0..8 {
+    //         for y in 0..8 {
+    //             if let Some(piece) = &self.squares[x][y] {
+    //                 if piece.color == color {
+    //                     // Try moving each piece to any valid square
+    //                     for new_x in 0..8 {
+    //                         for new_y in 0..8 {
+    //                             if self.is_valid_move((x, y), (new_x, new_y), color) {
+    //                                 return false; // There is a move left for the player
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     true // No moves left, it's stalemate
+    // }
 
     // Check if a given color's king is still on the board
     fn has_king(&self, color: Color) -> bool {
@@ -428,78 +444,49 @@ impl Board {
         false
     }
 
-    // evaluate the board (material balance)
-    fn evaluate(&self) -> i32 {
-        let mut score = 0;
-
-        // iterate over the entire board
-        for row in &self.squares {
-            for square in row {
-                if let Some(piece) = square {
-                    let piece_value = match piece.piece_type {
-                        PieceType::Pawn => 1,
-                        PieceType::Knight => 3,
-                        PieceType::Bishop => 3,
-                        PieceType::Rook => 5,
-                        PieceType::Queen => 9,
-                        PieceType::King => 1000,
-                    };
-                    // add score for white pieces, subtract for black pieces
-                    score += if piece.color == Color::White {
-                        piece_value
-                    } else {
-                        -piece_value
-                    };
-                }
-            }
+    fn is_game_over(&self, color: Color) -> bool {
+        if self.is_checkmate(color) || self.get_all_moves(color).is_empty() {
+            return true; // Game is over if checkmate or no valid moves left
         }
-        score
-    }
-
-    // make a move on the board
-    fn make_move(&mut self, mv: ((usize, usize), (usize, usize))) {
-        let (start, end) = mv;
-        let (start_x, start_y) = start;
-        let (end_x, end_y) = end;
-
-        if let Some(_piece) = self.squares[start_x][start_y].take() {
-            // perform the move
-            self.squares[end_x][end_y] = self.squares[start_x][start_y].take();
-            self.squares[start_x][start_y] = None; // clear the starting position
-        }
-    }
-
-    // check if a player has valid moves
-    fn has_valid_moves(&self, color: Color) -> bool {
-        for x in 0..8 {
-            for y in 0..8 {
-                if let Some(piece) = &self.squares[x][y] {
-                    if piece.color == color {
-                        for dx in 0..8 {
-                            for dy in 0..8 {
-                                if self.is_valid_move((x, y), (dx, dy), color) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // TODO: add other checks here (stalemate, is_in_check_after_move, insufficient material)
+        // if self.is_checkmate(color) || self.is_stalemate(color) || self.is_in_check_after_move || self.get_all_moves(color).is_empty() {
+        //     return true; // Game is over if checkmate or no valid moves left
+        // }
         false
     }
 
-    fn display_board(Board: &Board) {
-        for row in Board.squares.iter() {
-            for square in row.iter() {
-                match square {
-                    Some(piece) => print!("{} ", piece.to_char()),
-                    None => print!(". "),
-                }
-            }
-            println!();
-        }
-    }
+    // // make a move on the board
+    // fn make_move(&mut self, mv: ((usize, usize), (usize, usize))) {
+    //     let (start, end) = mv;
+    //     let (start_x, start_y) = start;
+    //     let (end_x, end_y) = end;
+    //
+    //     if let Some(_piece) = self.squares[start_x][start_y].take() {
+    //         // perform the move
+    //         self.squares[end_x][end_y] = self.squares[start_x][start_y].take();
+    //         self.squares[start_x][start_y] = None; // clear the starting position
+    //     }
+    // }
+
+    // // check if a player has valid moves
+    // fn has_valid_moves(&self, color: Color) -> bool {
+    //     for x in 0..8 {
+    //         for y in 0..8 {
+    //             if let Some(piece) = &self.squares[x][y] {
+    //                 if piece.color == color {
+    //                     for dx in 0..8 {
+    //                         for dy in 0..8 {
+    //                             if self.is_valid_move((x, y), (dx, dy), color) {
+    //                                 return true;
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     false
+    // }
 
     fn parse_move(&self, move_str: &str) -> Option<(usize, usize)> {
         if move_str.len() != 2 {
@@ -520,8 +507,48 @@ impl Board {
         Some((row_index, col_index))
     }
 
-    // TODO: to implement minimax for automation
+    // Switch the turn between players
+    fn switch_turn(&mut self) {
+        self.current_turn = match self.current_turn {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        };
+    }
 
+    // Get the current turn
+    fn get_current_turn(&self) -> Color {
+        self.current_turn
+    }
+
+    // TODO: to implement minimax for AI/automation
+
+    // // evaluate the board (material balance)
+    // fn evaluate(&self) -> i32 {
+    //     let mut score = 0;
+    //
+    //     // iterate over the entire board
+    //     for row in &self.squares {
+    //         for square in row {
+    //             if let Some(piece) = square {
+    //                 let piece_value = match piece.piece_type {
+    //                     PieceType::Pawn => 1,
+    //                     PieceType::Knight => 3,
+    //                     PieceType::Bishop => 3,
+    //                     PieceType::Rook => 5,
+    //                     PieceType::Queen => 9,
+    //                     PieceType::King => 1000,
+    //                 };
+    //                 // add score for white pieces, subtract for black pieces
+    //                 score += if piece.color == Color::White {
+    //                     piece_value
+    //                 } else {
+    //                     -piece_value
+    //                 };
+    //             }
+    //         }
+    //     }
+    //     score
+    // }
     // // minimax function for decision-making (basic ai)
     // fn minimax(Board: &Board, depth: usize, is_maximizing: bool) -> i32 {
     //     if depth == 0 || Board.is_game_over(Color::White) || Board.is_game_over(Color::Black) {
@@ -562,7 +589,7 @@ fn main() {
     // let white_moves = board.get_all_moves(Color::White);
     // let black_moves = board.get_all_moves(Color::Black);
 
-    let mut current_player = Color::White; // White starts the game
+    //let mut current_player = Color::White; // White starts the game // this now in Board
 
     println!("White has {} valid moves.", board.get_all_moves(Color::White).len());
     println!("Black has {} valid moves.", board.get_all_moves(Color::Black).len());
@@ -573,13 +600,13 @@ fn main() {
     println!("Is the game over for White? {}", board.is_game_over(Color::White));
     println!("Is the game over for Black? {}", board.is_game_over(Color::Black));
 
-    while !board.is_game_over(current_player) {
+    while !board.is_game_over(board.get_current_turn()) {
         let highlights = vec![];
         board.print_board(&highlights);
         board.print_captured_pieces();
 
         //println!("enter your move (e.g., e2e4):");
-        println!("player {:?}'s turn", current_player);
+        println!("player {:?}'s turn", board.get_current_turn());
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("Failed to read input");
         if input.trim().len() != 4 {
@@ -594,13 +621,20 @@ fn main() {
         if let (Some((start_x, start_y)), Some((end_x, end_y))) = (start, end) {
             println!("Parsed start: ({}, {}), end: ({}, {})", start_x, start_y, end_x, end_y);
             // Check if the move is valid
-            if board.is_valid_move((start_x, start_y), (end_x, end_y), current_player) {
-                // Make the move and switch players
+            if board.is_valid_move((start_x, start_y), (end_x, end_y), board.get_current_turn()) {
+                // Make the move
                 board.move_piece((start_x, start_y), (end_x, end_y));
-                current_player = match current_player {
-                    Color::White => Color::Black,
-                    Color::Black => Color::White,
-                };
+                // Check for checkmate
+                if board.is_checkmate(board.get_current_turn()) {
+                    board.print_board(&vec![]);
+                    println!("Checkmate! {:?} wins.", match board.get_current_turn(){
+                        Color::White => Color::Black,
+                        Color::Black => Color::White,
+                    });
+                    return;
+                }
+                board.switch_turn();
+                // current_player = board.get_current_turn(); // Update the variable if still needed
             } else {
                 println!("invalid move, try again.");
             }
