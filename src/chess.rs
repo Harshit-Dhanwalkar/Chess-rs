@@ -1,5 +1,5 @@
 use std::io;
-use std::option::Option; 
+use std::option::Option;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ enum PieceType {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Color {
-    White, 
+    White,
     Black,
 }
 
@@ -40,12 +40,48 @@ struct Piece {
 impl Piece {
     fn to_char(&self) -> String {
         let symbol = match self.piece_type {
-            PieceType::King => if self.color == Color::White { '♔' } else { '♚' },
-            PieceType::Queen => if self.color == Color::White { '♕' } else { '♛' },
-            PieceType::Rook => if self.color == Color::White { '♖' } else { '♜' },
-            PieceType::Bishop => if self.color == Color::White { '♗' } else { '♝' },
-            PieceType::Knight => if self.color == Color::White { '♘' } else { '♞' },
-            PieceType::Pawn => if self.color == Color::White { '♙' } else { '♟' },
+            PieceType::King => {
+                if self.color == Color::White {
+                    '♔'
+                } else {
+                    '♚'
+                }
+            }
+            PieceType::Queen => {
+                if self.color == Color::White {
+                    '♕'
+                } else {
+                    '♛'
+                }
+            }
+            PieceType::Rook => {
+                if self.color == Color::White {
+                    '♖'
+                } else {
+                    '♜'
+                }
+            }
+            PieceType::Bishop => {
+                if self.color == Color::White {
+                    '♗'
+                } else {
+                    '♝'
+                }
+            }
+            PieceType::Knight => {
+                if self.color == Color::White {
+                    '♘'
+                } else {
+                    '♞'
+                }
+            }
+            PieceType::Pawn => {
+                if self.color == Color::White {
+                    '♙'
+                } else {
+                    '♟'
+                }
+            }
         };
         if self.color == Color::White {
             format!("\x1b[1;97m{}\x1b[0m", symbol) // White pieces in bold
@@ -68,19 +104,37 @@ impl Board {
     // Constructor for Board
     fn new() -> Board {
         let mut squares = [[None; 8]; 8]; // Initialize empty squares with None
-        // Initialize pawns
+                                          // Initialize pawns
         for i in 0..8 {
-            squares[1][i] = Some(Piece { piece_type: PieceType::Pawn, color: Color::White });
-            squares[6][i] = Some(Piece { piece_type: PieceType::Pawn, color: Color::Black });
+            squares[1][i] = Some(Piece {
+                piece_type: PieceType::Pawn,
+                color: Color::White,
+            });
+            squares[6][i] = Some(Piece {
+                piece_type: PieceType::Pawn,
+                color: Color::Black,
+            });
         }
         // Initialize other pieces
         let back_rank = [
-            PieceType::Rook, PieceType::Knight, PieceType::Bishop, PieceType::Queen,
-            PieceType::King, PieceType::Bishop, PieceType::Knight, PieceType::Rook,
+            PieceType::Rook,
+            PieceType::Knight,
+            PieceType::Bishop,
+            PieceType::Queen,
+            PieceType::King,
+            PieceType::Bishop,
+            PieceType::Knight,
+            PieceType::Rook,
         ];
         for (i, &piece_type) in back_rank.iter().enumerate() {
-            squares[0][i] = Some(Piece { piece_type, color: Color::White });
-            squares[7][i] = Some(Piece { piece_type, color: Color::Black });
+            squares[0][i] = Some(Piece {
+                piece_type,
+                color: Color::White,
+            });
+            squares[7][i] = Some(Piece {
+                piece_type,
+                color: Color::Black,
+            });
         }
         // Initialize the board with an empty captured pieces array
         Board {
@@ -96,19 +150,19 @@ impl Board {
     }
 
     fn print_board(&self, highlights: &[(usize, usize)]) {
-    //fn print_board(&self) {
+        //fn print_board(&self) {
         println!("   a b c d e f g h");
         println!("  ┌────────────────┐");
-        for (i,row) in self.squares.iter().enumerate() {
+        for (i, row) in self.squares.iter().enumerate() {
             //print!("{} │", 8 - i);
             print!("{} │", (b'8' - i as u8) as char);
-            for (j,square) in row.iter().enumerate() {
+            for (j, square) in row.iter().enumerate() {
                 if highlights.contains(&(i, j)) {
                     print!("* "); // Highlighted move
                 } else {
                     match square {
-                          Some(piece) => print!("{} ", piece.to_char()),
-                          None => print!(". "),
+                        Some(piece) => print!("{} ", piece.to_char()),
+                        None => print!(". "),
                     }
                 }
             }
@@ -171,10 +225,19 @@ impl Board {
         let black_captured: String = self.captured_black.iter().map(|p| p.to_char()).collect();
 
         println!("┌──────────────────────────┬─────────────────────────────┐");
-        println!("│ {:<10}               │ {:<13}               │", "Points ", "Captured pieces");
+        println!(
+            "│ {:<10}               │ {:<13}               │",
+            "Points ", "Captured pieces"
+        );
         println!("├──────────────────────────┼─────────────────────────────┤");
-        println!("│ {:<10}               │ White: {:<13}        │", self.white_points, white_captured);
-        println!("│ {:<10}               │ Black: {:<13}        │", self.black_points, black_captured);
+        println!(
+            "│ {:<10}               │ White: {:<13}        │",
+            self.white_points, white_captured
+        );
+        println!(
+            "│ {:<10}               │ Black: {:<13}        │",
+            self.black_points, black_captured
+        );
         println!("└──────────────────────────┴─────────────────────────────┘");
     }
 
@@ -217,7 +280,8 @@ impl Board {
                 return self.squares[2][end_y].is_none() && self.squares[end_x][end_y].is_none();
             }
             // Diagonal capture for White pawns
-            if start_x < 7 && start_x + 1 == end_x && (start_y as isize - end_y as isize).abs() == 1 {
+            if start_x < 7 && start_x + 1 == end_x && (start_y as isize - end_y as isize).abs() == 1
+            {
                 if let Some(piece) = &self.squares[end_x][end_y] {
                     if piece.color == Color::Black {
                         // println!("White pawn diagonal capture: ({},{}) -> ({},{})", start_x, start_y, end_x, end_y);
@@ -237,7 +301,8 @@ impl Board {
                 return self.squares[5][end_y].is_none() && self.squares[end_x][end_y].is_none();
             }
             // Diagonal capture for Black pawns
-            if start_x > 0 && start_x - 1 == end_x && (start_y as isize - end_y as isize).abs() == 1 {
+            if start_x > 0 && start_x - 1 == end_x && (start_y as isize - end_y as isize).abs() == 1
+            {
                 if let Some(piece) = &self.squares[end_x][end_y] {
                     if piece.color == Color::White {
                         // println!("Black pawn diagonal capture: ({},{}) -> ({},{})", start_x, start_y, end_x, end_y);
@@ -249,7 +314,12 @@ impl Board {
         false
     }
 
-    fn is_valid_knight_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
+    fn is_valid_knight_move(
+        &self,
+        start: (usize, usize),
+        end: (usize, usize),
+        color: Color,
+    ) -> bool {
         let (start_x, start_y) = start;
         let (end_x, end_y) = end;
 
@@ -258,13 +328,18 @@ impl Board {
 
         // knight move/capture
         if (dx == 2 && dy == 1) || (dx == 1 && dy == 2) {
-            return self.squares[end_x][end_y].is_none() 
+            return self.squares[end_x][end_y].is_none()
                 || self.squares[end_x][end_y].unwrap().color != color; // capture an opponent's piece
         }
         false
     }
 
-    fn is_valid_bishop_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
+    fn is_valid_bishop_move(
+        &self,
+        start: (usize, usize),
+        end: (usize, usize),
+        color: Color,
+    ) -> bool {
         let (start_x, start_y) = start;
         let (end_x, end_y) = end;
 
@@ -289,7 +364,8 @@ impl Board {
         }
 
         // return self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].unwrap().color != color;
-        self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
+        self.squares[end_x][end_y].is_none()
+            || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
     }
 
     fn is_valid_rook_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
@@ -303,14 +379,22 @@ impl Board {
 
         // Check if path is clear (no pieces blocking the rook's movement)
         if start_x == end_x {
-            let range = if start_y < end_y { start_y + 1..end_y } else { end_y + 1..start_y };
+            let range = if start_y < end_y {
+                start_y + 1..end_y
+            } else {
+                end_y + 1..start_y
+            };
             for y in range {
                 if self.squares[start_x][y].is_some() {
                     return false; // Path blocked
                 }
             }
         } else {
-            let range = if start_x < end_x { start_x + 1..end_x } else { end_x + 1..start_x };
+            let range = if start_x < end_x {
+                start_x + 1..end_x
+            } else {
+                end_x + 1..start_x
+            };
             for x in range {
                 if self.squares[x][start_y].is_some() {
                     return false; // Path blocked
@@ -327,7 +411,12 @@ impl Board {
     }
 
     // validity check for queen movement (combines bishop and rook movement)
-    fn is_valid_queen_move(&self, start: (usize, usize), end: (usize, usize), color: Color) -> bool {
+    fn is_valid_queen_move(
+        &self,
+        start: (usize, usize),
+        end: (usize, usize),
+        color: Color,
+    ) -> bool {
         self.is_valid_rook_move(start, end, color) || self.is_valid_bishop_move(start, end, color)
     }
 
@@ -344,7 +433,17 @@ impl Board {
         //     return self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].unwrap().color != color;
         // }
         if dx <= 1 && dy <= 1 {
-           self.squares[end_x][end_y].is_none() || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
+            // Check if the destination is empty or occupied by an opponent's piece
+            // self.squares[end_x][end_y].is_none()
+            //     || self.squares[end_x][end_y].map_or(false, |p| p.color != color)
+            // } else {
+            //     false
+            // }
+            if let Some(piece) = &self.squares[end_x][end_y] {
+                piece.color != color
+            } else {
+                true
+            }
         } else {
             false
         }
@@ -360,6 +459,7 @@ impl Board {
                 }
             }
         }
+        println!("Error: King of {:?} not found!", color);
         None
     }
 
@@ -372,7 +472,11 @@ impl Board {
         };
 
         // Loop through the opponent's pieces and check if any can attack the king
-        let opponent_color = if color == Color::White { Color::Black } else { Color::White };
+        let opponent_color = if color == Color::White {
+            Color::Black
+        } else {
+            Color::White
+        };
         for x in 0..8 {
             for y in 0..8 {
                 if let Some(piece) = &self.squares[x][y] {
@@ -380,7 +484,10 @@ impl Board {
                         // Check if the opponent's piece can attack the king's position
                         if self.is_valid_move((x, y), king_position, opponent_color) {
                             // Print when the king is in check
-                            println!("King of {:?} is in check! Attacked by {:?} at ({}, {})", color, piece.piece_type, x, y);
+                            println!(
+                                "King of {:?} is in check! Attacked by {:?} at ({}, {})",
+                                color, piece.piece_type, x, y
+                            );
                             return true; // King is in check
                         }
                     }
@@ -390,25 +497,59 @@ impl Board {
         false // King is not in check
     }
 
-    fn is_checkmate(&self, color: Color) -> bool {
-        // If the king is not in check, it cannot be in checkmate
+    // fn is_checkmate(&self, color: Color) -> bool {
+    //     if !self.is_in_check(color) {
+    //         return false;  // not in check, cannot be in checkmate       }
+    //     // Loop through all the player's pieces to check if any can move to escape check
+    //     for x in 0..8 {
+    //         for y in 0..8 {
+    //             if let Some(piece) = &self.squares[x][y] {
+    //                 if piece.color == color {
+    //                     // Try moving each piece to every valid square
+    //                     for new_x in 0..8 {
+    //                         for new_y in 0..8 {
+    //                             if self.is_valid_move((x, y), (new_x, new_y), color) {
+    //                                 // Simulate the move and check if the king will still be in check
+    //                                 let mut board_copy = self.clone();
+    //                                 board_copy.move_piece((x, y), (new_x, new_y));
+    //                                 if !board_copy.is_in_check(color) {
+    //                                     return false; // If there is a move that avoids check, it's not checkmate
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     // No moves to avoid check, it's checkmate
+    //     true
+    // }
+    fn is_checkmate(&mut self, color: Color) -> bool {
         if !self.is_in_check(color) {
             return false;
         }
-        // Loop through all the player's pieces to check if any can move to escape check
+
         for x in 0..8 {
             for y in 0..8 {
-                if let Some(piece) = &self.squares[x][y] {
+                if let Some(piece) = self.squares[x][y].clone() {
+                    // Clone the piece to avoid borrowing
                     if piece.color == color {
-                        // Try moving each piece to every valid square
                         for new_x in 0..8 {
                             for new_y in 0..8 {
                                 if self.is_valid_move((x, y), (new_x, new_y), color) {
-                                    // Simulate the move and check if the king will still be in check
-                                    let mut board_copy = self.clone();
-                                    board_copy.move_piece((x, y), (new_x, new_y));
-                                    if !board_copy.is_in_check(color) {
-                                        return false; // If there is a move that avoids check, it's not checkmate
+                                    let temp_piece = self.squares[new_x][new_y].clone();
+                                    self.squares[new_x][new_y] = Some(piece.clone());
+                                    self.squares[x][y] = None;
+
+                                    let is_still_in_check = self.is_in_check(color);
+
+                                    // Restore the board state
+                                    self.squares[x][y] = Some(piece);
+                                    self.squares[new_x][new_y] = temp_piece;
+
+                                    if !is_still_in_check {
+                                        return false;
                                     }
                                 }
                             }
@@ -417,7 +558,7 @@ impl Board {
                 }
             }
         }
-        // No moves to avoid check, it's checkmate
+
         true
     }
 
@@ -469,7 +610,7 @@ impl Board {
         false
     }
 
-    fn is_game_over(&self, color: Color) -> bool {
+    fn is_game_over(&mut self, color: Color) -> bool {
         if self.is_checkmate(color) || self.get_all_moves(color).is_empty() {
             return true; // Game is over if checkmate or no valid moves left
         }
@@ -603,14 +744,26 @@ fn main() {
 
     //let mut current_player = Color::White; // White starts the game // this now in Board
 
-    println!("White has {} valid moves.", board.get_all_moves(Color::White).len());
-    println!("Black has {} valid moves.", board.get_all_moves(Color::Black).len());
+    println!(
+        "White has {} valid moves.",
+        board.get_all_moves(Color::White).len()
+    );
+    println!(
+        "Black has {} valid moves.",
+        board.get_all_moves(Color::Black).len()
+    );
 
     println!("Is White in check? {}", board.is_in_check(Color::White));
     println!("Is Black in check? {}", board.is_in_check(Color::Black));
 
-    println!("Is the game over for White? {}", board.is_game_over(Color::White));
-    println!("Is the game over for Black? {}", board.is_game_over(Color::Black));
+    println!(
+        "Is the game over for White? {}",
+        board.is_game_over(Color::White)
+    );
+    println!(
+        "Is the game over for Black? {}",
+        board.is_game_over(Color::Black)
+    );
 
     while !board.is_game_over(board.get_current_turn()) {
         let highlights = vec![];
@@ -620,7 +773,9 @@ fn main() {
         //println!("enter your move (e.g., e2e4):");
         println!("player {:?}'s turn", board.get_current_turn());
         let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read input");
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read input");
         if input.trim().len() != 4 {
             println!("Invalid move format. Use 'e2e4'.");
             continue;
@@ -631,7 +786,10 @@ fn main() {
         let end = board.parse_move(&input[2..4]);
 
         if let (Some((start_x, start_y)), Some((end_x, end_y))) = (start, end) {
-            println!("Parsed start: ({}, {}), end: ({}, {})", start_x, start_y, end_x, end_y);
+            println!(
+                "Parsed start: ({}, {}), end: ({}, {})",
+                start_x, start_y, end_x, end_y
+            );
             // Check if the move is valid
             if board.is_valid_move((start_x, start_y), (end_x, end_y), board.get_current_turn()) {
                 // Make the move
@@ -639,10 +797,13 @@ fn main() {
                 // Check for checkmate
                 if board.is_checkmate(board.get_current_turn()) {
                     board.print_board(&vec![]);
-                    println!("Checkmate! {:?} wins.", match board.get_current_turn(){
-                        Color::White => Color::Black,
-                        Color::Black => Color::White,
-                    });
+                    println!(
+                        "Checkmate! {:?} wins.",
+                        match board.get_current_turn() {
+                            Color::White => Color::Black,
+                            Color::Black => Color::White,
+                        }
+                    );
                     return;
                 }
                 board.switch_turn();
@@ -652,7 +813,7 @@ fn main() {
             }
         } else {
             println!("Invalid move format or out-of-bound coordinates.");
-          }
+        }
     }
 
     // Game Over
