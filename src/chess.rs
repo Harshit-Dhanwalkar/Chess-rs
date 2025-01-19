@@ -497,23 +497,31 @@ impl Board {
         false // King is not in check
     }
 
-    // fn is_checkmate(&self, color: Color) -> bool {
+    // fn is_checkmate(&mut self, color: Color) -> bool {
     //     if !self.is_in_check(color) {
-    //         return false;  // not in check, cannot be in checkmate       }
-    //     // Loop through all the player's pieces to check if any can move to escape check
+    //         return false;
+    //     }
+    //
     //     for x in 0..8 {
     //         for y in 0..8 {
-    //             if let Some(piece) = &self.squares[x][y] {
+    //             if let Some(piece) = self.squares[x][y].clone() {
+    //                 // Clone the piece to avoid borrowing
     //                 if piece.color == color {
-    //                     // Try moving each piece to every valid square
     //                     for new_x in 0..8 {
     //                         for new_y in 0..8 {
     //                             if self.is_valid_move((x, y), (new_x, new_y), color) {
-    //                                 // Simulate the move and check if the king will still be in check
-    //                                 let mut board_copy = self.clone();
-    //                                 board_copy.move_piece((x, y), (new_x, new_y));
-    //                                 if !board_copy.is_in_check(color) {
-    //                                     return false; // If there is a move that avoids check, it's not checkmate
+    //                                 let temp_piece = self.squares[new_x][new_y].clone();
+    //                                 self.squares[new_x][new_y] = Some(piece.clone());
+    //                                 self.squares[x][y] = None;
+    //
+    //                                 let is_still_in_check = self.is_in_check(color);
+    //
+    //                                 // Restore the board state
+    //                                 self.squares[x][y] = Some(piece);
+    //                                 self.squares[new_x][new_y] = temp_piece;
+    //
+    //                                 if !is_still_in_check {
+    //                                     return false;
     //                                 }
     //                             }
     //                         }
@@ -522,19 +530,28 @@ impl Board {
     //             }
     //         }
     //     }
-    //     // No moves to avoid check, it's checkmate
+    //
     //     true
     // }
     fn is_checkmate(&mut self, color: Color) -> bool {
+        // Check if the king is missing (captured)
+        if self.find_king(color).is_none() {
+            // If the king is missing, it's checkmate (game over)
+            return true;
+        }
+
+        // If the king is in check, check if any valid moves can get the king out of check
         if !self.is_in_check(color) {
             return false;
         }
 
+        // Iterate over all squares to find the color's pieces
         for x in 0..8 {
             for y in 0..8 {
                 if let Some(piece) = self.squares[x][y].clone() {
                     // Clone the piece to avoid borrowing
                     if piece.color == color {
+                        // Check all possible moves for this piece
                         for new_x in 0..8 {
                             for new_y in 0..8 {
                                 if self.is_valid_move((x, y), (new_x, new_y), color) {
@@ -542,12 +559,14 @@ impl Board {
                                     self.squares[new_x][new_y] = Some(piece.clone());
                                     self.squares[x][y] = None;
 
+                                    // Check if the king is still in check after the move
                                     let is_still_in_check = self.is_in_check(color);
 
                                     // Restore the board state
                                     self.squares[x][y] = Some(piece);
                                     self.squares[new_x][new_y] = temp_piece;
 
+                                    // If the move doesn't result in the king being in check, it's not checkmate
                                     if !is_still_in_check {
                                         return false;
                                     }
@@ -559,6 +578,7 @@ impl Board {
             }
         }
 
+        // If no valid move can escape check, it's checkmate
         true
     }
 
