@@ -1,9 +1,10 @@
 # Chess-rs
 
 ## TODO
+
 - [x] keep track of captured pieces
 - [x] points counter
-- [x] checkmate 
+- [x] checkmate
 - [ ] keep track of pieces rather cloning entire board
 - [ ] find_king method searches the entire board for the king, which is inefficient if called frequently.
 - [ ] promotion
@@ -15,12 +16,14 @@
 - [ ] customizable time controls
 - [ ] Undo/Redo moves
 
-***AI*** 
-- [ ] implement minimax 
+**_AI_**
+
+- [ ] implement minimax
 - [ ] alpha-beta pruning
 - [ ] transposition table
 - [ ] evaluation function
 
-**Specials** 
+**Specials**
+
 - [ ] save/load game
 - [ ] UI
