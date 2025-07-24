@@ -8,7 +8,7 @@
 - [ ] keep track of pieces rather cloning entire board
 - [ ] find_king method searches the entire board for the king, which is inefficient if called frequently.
 - [ ] promotion
-- [ ] stalemate
+- [x] stalemate
 - [ ] insuffient material
 - [ ] implement minimax
 - [ ] en passant
@@ -26,4 +26,8 @@
 **Specials**
 
 - [ ] save/load game
-- [ ] UI
+
+**UI**
+
+- [ ] Mouse support
+- [ ] TUI-rs
