@@ -791,19 +791,35 @@ fn main() {
         board.print_captured_pieces();
 
         //println!("enter your move (e.g., e2e4):");
-        println!("player {:?}'s turn", board.get_current_turn());
+        println!(
+            "Player {:?}'s turn (enter 'q' to quit)",
+            board.get_current_turn()
+        );
         let mut input = String::new();
         io::stdin()
             .read_line(&mut input)
             .expect("Failed to read input");
-        if input.trim().len() != 4 {
-            println!("Invalid move format. Use 'e2e4'.");
+        // if input.trim().len() != 4 {
+        //     println!("Invalid move format. Use 'e2e4'.");
+        //     continue;
+        // }
+
+        // Trim whitespace and check for quit commands
+        let trimmed_input = input.trim();
+        if trimmed_input == "q" || trimmed_input == "\x1B" {
+            // \x1B = ESC
+            println!("Game exited by user.");
+            return;
+        }
+
+        if trimmed_input.len() != 4 {
+            println!("Invalid move format. Use 'e2e4' or 'q'/'ESC' to quit.");
             continue;
         }
 
         // Parse start and end positions
-        let start = board.parse_move(&input[0..2]);
-        let end = board.parse_move(&input[2..4]);
+        let start = board.parse_move(&trimmed_input[0..2]);
+        let end = board.parse_move(&trimmed_input[2..4]);
 
         if let (Some((start_x, start_y)), Some((end_x, end_y))) = (start, end) {
             println!(
