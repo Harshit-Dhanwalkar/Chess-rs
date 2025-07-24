@@ -42,43 +42,49 @@ impl Piece {
         let symbol = match self.piece_type {
             PieceType::King => {
                 if self.color == Color::White {
-                    '♔'
+                    '♚'
                 } else {
                     '♚'
+                    // '♔'
                 }
             }
             PieceType::Queen => {
                 if self.color == Color::White {
-                    '♕'
+                    '♛'
                 } else {
+                    // '♕'
                     '♛'
                 }
             }
             PieceType::Rook => {
                 if self.color == Color::White {
-                    '♖'
+                    '♜'
                 } else {
+                    // '♖'
                     '♜'
                 }
             }
             PieceType::Bishop => {
                 if self.color == Color::White {
-                    '♗'
+                    '♝'
                 } else {
+                    // '♗'
                     '♝'
                 }
             }
             PieceType::Knight => {
                 if self.color == Color::White {
-                    '♘'
+                    '♞'
                 } else {
+                    // '♘'
                     '♞'
                 }
             }
             PieceType::Pawn => {
                 if self.color == Color::White {
-                    '♙'
+                    '♟'
                 } else {
+                    // '♙'
                     '♟'
                 }
             }
@@ -149,18 +155,55 @@ impl Board {
         }
     }
 
-    fn print_board(&self, highlights: &[(usize, usize)]) {
+    fn choose_player_color() -> Color {
+        loop {
+            let white_king = Piece {
+                piece_type: PieceType::King,
+                color: Color::White,
+            }
+            .to_char();
+
+            let black_king = Piece {
+                piece_type: PieceType::King,
+                color: Color::Black,
+            }
+            .to_char();
+
+            println!(
+                "Choose your color:\n{} - White\n{} - Black\n(Enter W or B):",
+                white_king, black_king
+            );
+
+            let mut input = String::new();
+            io::stdin()
+                .read_line(&mut input)
+                .expect("Failed to read input");
+
+            match input.trim().to_uppercase().as_str() {
+                "W" => return Color::White,
+                "B" => return Color::Black,
+                _ => println!("Invalid input. Please enter 'W' or 'B'."),
+            }
+        }
+    }
+
+    fn print_board(&self, highlights: &[(usize, usize)], player_perspective: Color) {
         //fn print_board(&self) {
         println!("   a b c d e f g h");
         println!("  ┌────────────────┐");
-        for (i, row) in self.squares.iter().enumerate() {
-            //print!("{} │", 8 - i);
+        let rows: Vec<usize> = if player_perspective == Color::White {
+            (0..8).collect() // White at bottom (normal order)
+        } else {
+            (0..8).rev().collect() // Black at bottom (reversed order)
+        };
+
+        for &i in &rows {
             print!("{} │", (b'8' - i as u8) as char);
-            for (j, square) in row.iter().enumerate() {
+            for j in 0..8 {
                 if highlights.contains(&(i, j)) {
                     print!("* "); // Highlighted move
                 } else {
-                    match square {
+                    match self.squares[i][j] {
                         Some(piece) => print!("{} ", piece.to_char()),
                         None => print!(". "),
                     }
@@ -758,6 +801,7 @@ impl Board {
 
 fn main() {
     let mut board = Board::new();
+    let player_color = Board::choose_player_color();
 
     // let white_moves = board.get_all_moves(Color::White);
     // let black_moves = board.get_all_moves(Color::Black);
@@ -787,7 +831,7 @@ fn main() {
 
     while !board.is_game_over(board.get_current_turn()) {
         let highlights = vec![];
-        board.print_board(&highlights);
+        board.print_board(&highlights, player_color);
         board.print_captured_pieces();
 
         //println!("enter your move (e.g., e2e4):");
@@ -832,7 +876,7 @@ fn main() {
                 board.move_piece((start_x, start_y), (end_x, end_y));
                 // Check for checkmate
                 if board.is_checkmate(board.get_current_turn()) {
-                    board.print_board(&vec![]);
+                    board.print_board(&vec![], player_color);
                     println!(
                         "Checkmate! {:?} wins.",
                         match board.get_current_turn() {
@@ -843,7 +887,6 @@ fn main() {
                     return;
                 }
                 board.switch_turn();
-                // current_player = board.get_current_turn(); // Update the variable if still needed
             } else {
                 println!("invalid move, try again.");
             }
@@ -854,12 +897,12 @@ fn main() {
 
     // Game Over
     if !board.has_king(Color::White) {
-        board.print_board(&vec![]);
+        board.print_board(&vec![], player_color);
         println!("Game over! Black wins. White's king has been captured.");
         return;
     }
     if !board.has_king(Color::Black) {
-        board.print_board(&vec![]);
+        board.print_board(&vec![], player_color);
         println!("Game over! White wins. Black's king has been captured.");
         return;
     }
