@@ -3,11 +3,12 @@
 ## TODO
 - [x] keep track of captured pieces
 - [x] points counter
-- [ ] checkmate 
+- [x] checkmate 
+- [ ] keep track of pieces rather cloning entire board
+- [ ] find_king method searches the entire board for the king, which is inefficient if called frequently.
+- [ ] promotion
 - [ ] stalemate
 - [ ] insuffient material
-- [ ] promotion
-- [ ] find_king method searches the entire board for the king, which is inefficient if called frequently.
 - [ ] implement minimax
 - [ ] en passant
 - [ ] castling

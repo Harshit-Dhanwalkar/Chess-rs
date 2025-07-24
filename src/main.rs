@@ -104,7 +104,7 @@ impl Board {
     // Constructor for Board
     fn new() -> Board {
         let mut squares = [[None; 8]; 8]; // Initialize empty squares with None
-                                          // Initialize pawns
+        // Initialize pawns
         for i in 0..8 {
             squares[1][i] = Some(Piece {
                 piece_type: PieceType::Pawn,
